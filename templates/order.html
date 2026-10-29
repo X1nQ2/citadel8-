@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оформление заказа — Цитадель</title>
+    <style>
+        :root {
+            --bg-color: #fcfbf7;
+            --text-main: #1c1c1c;
+            --accent: #2e4a3f;
+            --card-bg: #fff;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .order-container {
+            max-width: 450px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border: 1px solid #e8e6e0;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        h1 { font-weight: normal; font-size: 1.8rem; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e0ded9; padding-bottom: 10px; text-align: center; }
+        .book-details {
+            background-color: #f4f2eb;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 2px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #444;
+        }
+        input[type="text"], input[type="email"], input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background-color: #fafafa;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #fff;
+        }
+        .btn-submit {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 2px;
+        }
+        .btn-submit:hover { background-color: #1e332a; }
+        .back-link { display: block; text-align: center; margin-top: 25px; color: #666; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+    <div class="order-container">
+        <h1>Оформление и оплата</h1>
+
+        <div class="book-details" id="selected-book-info">
+            Получение данных об издании...
+        </div>
+
+        <!-- ИСПРАВЛЕНО: относительный путь, никаких 127.0.0.0 или портов 3000 -->
+        <form action="/api/checkout" method="POST">
+            <!-- Скрытые поля для передачи информации о товаре -->
+            <input type="hidden" name="id_tov" id="input-id-tov">
+            <input type="hidden" name="price" id="input-price">
+	    <div class="form-group">
+    	    <label for="fio">Ваше полное имя (ФИО):</label>
+     	    <input type="text" id="fio" name="fio" required placeholder="Иванов Иван Иванович">
+	    </div>
+            <div class="form-group">
+                <label for="email">Электронная почта (E-mail):</label>
+                <input type="email" id="email" name="email" required placeholder="example@mail.ru">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Номер мобильного телефона:</label>
+                <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 000-00-00">
+            </div>
+
+            <div class="form-group">
+                <label for="address">Адрес физической доставки книги:</label>
+                <input type="text" id="address" name="address" required placeholder="Город, улица, дом, квартира">
+            </div>
+
+            <button type="submit" class="btn-submit">Подтвердить заказ и оплатить</button>
+        </form>
+
+        <a href="/" class="back-link">← Вернуться к списку книг</a>
+    </div>
+
+    <script>
+        // Считываем параметры выбранной книги, переданные с главной страницы
+        const params = new URLSearchParams(window.location.search);
+        const idTov = params.get('id');
+        const titleTov = params.get('title');
+        const priceTov = params.get('price');
+
+        if (idTov && titleTov && priceTov) {
+            document.getElementById('selected-book-info').innerHTML = `
+                <strong>Выбранный том:</strong> ${decodeURIComponent(titleTov)}<br>
+                <strong>Стоимость издания:</strong> ${priceTov} ₽
+            `;
+            // Записываем данные в скрытые input для отправки на сервер
+            document.getElementById('input-id-tov').value = idTov;
+            document.getElementById('input-price').value = priceTov;
+        } else {
+            document.getElementById('selected-book-info').innerHTML = `<span style="color:red;">Товар не выбран! Вернитесь в каталог.</span>`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн-магазин книг "Генацидная Цитадель номер 8"</title>
+    <style>
+        :root {
+            --bg-color: #fcfbf7; 
+            --text-main: #1c1c1c;
+            --accent: #2e4a3f;
+            --card-bg: #fff;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            padding-top: 48px;
+        }
+        header {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #e0ded9;
+        }
+        h1 { font-size: 2.5rem; font-weight: normal; margin-bottom: 10px; }
+        .tagline { font-style: italic; color: #666; margin-bottom: 30px; }
+        
+        .catalog-container, .admin-container {
+            max-width: 1100px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+        h2 { font-weight: normal; border-bottom: 2px solid var(--accent); padding-bottom: 10px; display: inline-block; }
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .book-card {
+            background: var(--card-bg);
+            border: 1px solid #e8e6e0;
+            padding: 25px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .book-title { font-size: 1.3rem; margin: 0 0 10px 0; color: var(--text-main); }
+        .book-author { font-style: italic; color: #555; margin-bottom: 15px; }
+        .book-meta { font-size: 0.85rem; color: #777; margin: 5px 0; }
+        .book-footer {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .book-price { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+        .btn-buy, .btn-submit {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 2px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .btn-buy:hover, .btn-submit:hover { background-color: #1e332a; }
+
+        .add-book-form {
+            background: var(--card-bg);
+            border: 1px solid #e8e6e0;
+            padding: 30px;
+            max-width: 500px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; box-sizing: border-box; font-family: inherit; border-radius: 2px; }
+
+        /* Стильное полноэкранное уведомление об оплате */
+        .payment-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(46, 74, 63, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .payment-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .payment-modal {
+            background: #fff;
+            padding: 40px 60px;
+            text-align: center;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .payment-modal h3 {
+            margin: 0 0 10px 0;
+            color: var(--accent);
+            font-size: 2rem;
+            font-weight: normal;
+        }
+        .payment-modal p {
+            margin: 0;
+            color: #555;
+            font-size: 1.1rem;
+        }
+        #auth-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: flex-end; align-items: center; gap: 18px; padding: 12px 24px; background: #1c1c1c; font-family: 'Segoe UI', sans-serif; font-size: 0.95rem; }
+        #auth-bar a { color: #e8e6e0; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+        #auth-bar a:hover { color: #fff; }
+        #auth-bar svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* СТИЛИ ДЛЯ КАРТИНОК КНИГ НА ВИТРИНЕ */
+        .book-card-img-container {
+            width: 100%;
+            height: 220px;
+            background: #f4f2eb;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 2px;
+            border: 1px solid #e8e6e0;
+        }
+        .book-card-img {
+            height: 100%;
+            width: auto;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .book-card:hover .book-card-img {
+            transform: scale(1.04);
+        }
+
+        /* ПРОЦЕДУРНОЕ МОДАЛЬНОЕ ОКНО */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+
+        .modal-window {
+            background: #fff;
+            max-width: 650px;
+            width: 90%;
+            padding: 30px;
+            border-radius: 4px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .btn-delete-archive {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: #fff; border: 1px solid #f5c6cb;
+            color: #c94a4a; font-size: 0.9rem;
+            cursor: pointer; padding: 6px 12px;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .btn-delete-archive:hover { background: #f8d7da; color: #a33232; }
+
+        .btn-close-modal {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: none; border: none;
+            color: #888; font-size: 1.8rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .btn-close-modal:hover { color: #1c1c1c; }
+
+        .modal-content-layout { display: flex; gap: 25px; margin-top: 30px; text-align: left; }
+        .modal-img-col { width: 160px; flex-shrink: 0; display: flex; align-items: flex-start; }
+        .modal-img-col img { width: 100%; border-radius: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .modal-info-col { flex-grow: 1; }
+        .modal-book-title { font-size: 1.6rem; margin: 0 0 5px 0; font-weight: normal; color: var(--text-main); }
+        .modal-book-author { font-style: italic; color: #555; margin-bottom: 15px; }
+        .modal-annotation { font-size: 0.95rem; color: #444; background: #faf9f5; padding: 12px; border-left: 3px solid var(--accent); margin: 15px 0; line-height: 1.5; }
+
+        .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-bar"></div>
+
+    <div class="payment-overlay" id="paymentNotification">
+        <div class="payment-modal">
+            <h3>Платеж прошел успешно!</h3>
+            <p>Данные заказа занесены в архив СУБД Access.</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bookModal" onclick="closeBookModal(event)">
+        <div class="modal-window" onclick="event.stopPropagation()">
+            <button class="btn-delete-archive" id="modalDeleteBtn" title="Удалить издание из СУБД" style="display: none;">
+                🗑️ <span style="font-family: sans-serif; margin-left: 4px; font-weight: bold;">Удалить из архива</span>
+            </button>
+            
+            <button class="btn-close-modal" onclick="closeBookModal(null, true)">&times;</button>
+            
+            <div class="modal-content-layout">
+                <div class="modal-img-col">
+                    <img id="modalBookImg" src="" alt="Обложка">
+                </div>
+                <div class="modal-info-col">
+                    <h3 class="modal-book-title" id="modalBookTitle">Название книги</h3>
+                    <div class="modal-book-author" id="modalBookAuthor">Автор</div>
+                    
+                    <p class="book-meta"><b>Жанр:</b> <span id="modalBookGenre"></span></p>
+                    <p class="book-meta"><b>Издательство:</b> <span id="modalBookPublisher"></span></p>
+                    <p class="book-meta"><b>Год издания:</b> <span id="modalBookYear"></span></p>
+                    <p class="book-meta"><b>ISBN:</b> <span id="modalBookIsbn"></span></p>
+                    <p class="book-meta"><b>Доступно на складе:</b> <span id="modalBookStock"></span> экз.</p>
+                    
+                    <div class="modal-annotation">
+                        <strong>Аннотация фонда:</strong><br>
+                        <span id="modalBookAnnotation"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <a href="#" class="btn-buy" id="modalBuyBtn" style="font-size: 1rem; padding: 12px 35px;">Оформить и купить</a>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <h1>Онлайн-магазин книг "Генацидная цитадель номер 8"</h1>
+        <p class="tagline">Книги, деинсталлированные из цифрового ада. 0% синего света. 100% стабильность ума.</p>
+    </header>
+
+    <div class="catalog-container">
+        <h2>Каталог доступных томов</h2>
+        <div id="catalog-grid" class="books-grid">
+            Подключение к архивным фондам...
+        </div>
+    </div>
+
+    {% if session.get('role') == 'Админ' %}
+    <div class="admin-container">
+        <h2>Внесение нового тома в архив фондов</h2>
+        <form class="add-book-form" action="/api/books/add" method="POST">
+            <div class="form-group">
+                <label>Название издания:</label>
+                <input type="text" name="title" required>
+            </div>
+            <div class="form-group">
+                <label>Автор (ФИО):</label>
+                <input type="text" name="author" required>
+            </div>
+            <div class="form-group">
+                <label>ISBN код:</label>
+                <input type="text" name="isbn">
+            </div>
+            <div class="form-group">
+                <label>Год издания:</label>
+                <input type="number" name="year" required>
+            </div>
+            <div class="form-group">
+                <label>Стоимость (₽):</label>
+                <input type="number" step="0.01" name="price" required>
+            </div>
+            <div class="form-group">
+                <label>Количество на складе (экз.):</label>
+                <input type="number" name="stock" required>
+            </div>
+            <div class="form-group">
+                <label>Литературный жанр:</label>
+                <select name="genre_id" required>
+                    <option value="1">Классика</option>
+                    <option value="2">Роман</option>
+                    <option value="3">Мистика</option>
+                    <option value="4">Рассказ</option>
+                    <option value="5">Фантастика</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Издательский дом:</label>
+                <select name="publisher_id" required>
+                    <option value="1">АСТ</option>
+                    <option value="2">Эксмо</option>
+                    <option value="3">Азбука-Аттикус</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Добавить книгу в СУБД</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <script>
+        let currentBooksData = [];
+        let currentUserRole = null;
+
+        function loadCatalog() {
+            fetch('/api/books')
+                .then(res => res.json())
+                .then(books => {
+                    currentBooksData = books;
+                    const grid = document.getElementById('catalog-grid');
+                    grid.innerHTML = ''; 
+
+                    if (books.length === 0) {
+                        grid.innerHTML = '<p>В данный момент архивные фонды СУБД пусты.</p>';
+                        return;
+                    }
+
+                    books.forEach(book => {
+                        const card = document.createElement('div');
+                        card.className = 'book-card';
+                        card.setAttribute('onclick', `openBookModal(${book.id})`);
+
+                        card.innerHTML = `
+                            <div class="book-card-img-container">
+                                <img class="book-card-img" src="/book_images/${book.id}.jpg" onerror="this.onerror=null; this.src='/book_images/default.jpg';" alt="${book.title}">
+                            </div>
+                            <div>
+                                <h3 class="book-title">${book.title}</h3>
+                                <div class="book-author">Автор: ${book.author}</div>
+                                <p class="book-meta"><b>Жанр:</b> ${book.genre}</p>
+                                <p class="book-meta"><b>Доступно:</b> ${book.stock} экз.</p>
+                            </div>
+                            <div class="book-footer" onclick="event.stopPropagation();">
+                                <span class="book-price">${book.price} ₽</span>
+                                <a href="order.html?id_tov=${book.id}&title=${encodeURIComponent(book.title)}&price=${book.price}" class="btn-buy">Купить</a>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки каталога:', error);
+                    document.getElementById('catalog-grid').innerHTML = '<p style="color: red;">Ошибка синхронизации с базой данных Access.</p>';
+                });
+        }
+
+        function openBookModal(bookId) {
+            const book = currentBooksData.find(b => b.id === bookId);
+            if (!book) return;
+
+            document.getElementById('modalBookTitle').innerText = book.title;
+            document.getElementById('modalBookAuthor').innerText = 'Автор: ' + book.author;
+            document.getElementById('modalBookGenre').innerText = book.genre;
+            document.getElementById('modalBookPublisher').innerText = book.publisher;
+            document.getElementById('modalBookYear').innerText = book.year;
+            document.getElementById('modalBookIsbn').innerText = book.isbn;
+            document.getElementById('modalBookStock').innerText = book.stock;
+            
+            document.getElementById('modalBookAnnotation').innerText = 
+                `Классический фолиант "${book.title}" от автора ${book.author}. Напечатано в издательском доме "${book.publisher}" в ${book.year} году. Зарегистрировано в международном реестре под кодом ISBN ${book.isbn}.`;
+
+            const imgElement = document.getElementById('modalBookImg');
+            imgElement.src = `/book_images/${book.id}.jpg`;
+            imgElement.onerror = function() { this.src = '/book_images/default.jpg'; };
+
+            const buyBtn = document.getElementById('modalBuyBtn');
+            buyBtn.href = `order.html?id_tov=${book.id}&title=${encodeURIComponent(book.title)}&price=${book.price}`;
+
+            const deleteBtn = document.getElementById('modalDeleteBtn');
+            if (currentUserRole === 'Админ') {
+                deleteBtn.style.display = 'flex';
+                deleteBtn.onclick = function() {
+                    if (confirm(`Вы уверены, что хотите навсегда деинсталлировать книгу "${book.title}" из базы данных Access?`)) {
+                        fetch(`/api/books/delete/${book.id}`, { method: 'POST' })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    closeBookModal(null, true);
+                                    loadCatalog();
+                                } else {
+                                    alert('Ошибка СУБД: ' + data.error);
+                                }
+                            });
+                    }
+                };
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+
+            document.getElementById('bookModal').classList.add('show');
+        }
+
+        function closeBookModal(event, force = false) {
+            if (force || (event && event.target === document.getElementById('bookModal'))) {
+                document.getElementById('bookModal').classList.remove('show');
+            }
+        }
+
+        function checkPaymentStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'success') {
+                const overlay = document.getElementById('paymentNotification');
+                overlay.classList.add('show');
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                    window.history.replaceState({}, document.title, "/");
+                }, 3000);
+            }
+        }
+
+        fetch('/api/me').then(r => r.json()).then(u => {
+            currentUserRole = u.role;
+            document.getElementById('auth-bar').innerHTML = u.login
+                ? `<span style="color:#e8e6e0">\${u.login} (\${u.role})</span><a href="/logout" style="margin-left: 10px;">Выйти</a>`
+                : '<a href="/register.html">Регистрация</a> <a href="/login.html">Войти</a>';
+        });
+
+        loadCatalog();
+        checkPaymentStatus();
+    </script>
+</body>
+</html>

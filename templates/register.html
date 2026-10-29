@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Запрет кеширования страницы -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Регистрация — Цитадель</title>
+    <style>
+        :root { --bg-color:#fcfbf7; --text-main:#1c1c1c; --accent:#2e4a3f; }
+        body { font-family:'Georgia',serif; background:var(--bg-color); color:var(--text-main); margin:0; padding:40px 20px; }
+        .box { max-width:400px; margin:40px auto; background:#fff; padding:40px; border:1px solid #e8e6e0; border-radius:4px; }
+        h1 { font-weight:normal; font-size:1.8rem; margin:0 0 20px; text-align:center; border-bottom:1px solid #e0ded9; padding-bottom:10px; }
+        label { display:block; margin-bottom:8px; font-size:0.9rem; font-weight:bold; color:#444; }
+        input { width:100%; padding:12px; box-sizing:border-box; border:1px solid #ccc; border-radius:2px; font-family:inherit; background:#fafafa; margin-bottom:20px; }
+        input:focus { outline:none; border-color:var(--accent); background:#fff; }
+        button { width:100%; padding:14px; background:var(--accent); color:#fff; border:0; border-radius:2px; font-family:inherit; font-size:1rem; cursor:pointer; }
+        button:hover { background:#1e332a; }
+        .error { background:#f8d7da; color:#721c24; padding:10px; margin-bottom:20px; border-radius:2px; }
+        .link { display:block; text-align:center; margin-top:20px; color:#666; font-size:0.9rem; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Регистрация</h1>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <!-- autocomplete="off": браузер не подставляет и не предлагает сохранить данные -->
+        <form method="POST" autocomplete="off">
+            <label for="fio">ФИО:</label>
+            <input type="text" id="fio" name="fio" required maxlength="100"
+                   placeholder="Иванов Иван Иванович"
+                   autocomplete="off" spellcheck="false"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <label for="address">Адрес:</label>
+            <input type="text" id="address" name="address" required maxlength="255"
+                   placeholder="Город, улица, дом, квартира"
+                   autocomplete="off" spellcheck="false"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <label for="phone">Телефон:</label>
+            <input type="tel" id="phone" name="phone" required maxlength="30"
+                   placeholder="+7 (999) 000-00-00"
+                   autocomplete="off"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <label for="login">Логин:</label>
+            <input type="text" id="login" name="login" required minlength="3" maxlength="50"
+                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required minlength="6"
+                   autocomplete="new-password"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <label for="password2">Повторите пароль:</label>
+            <input type="password" id="password2" name="password2" required minlength="6"
+                   autocomplete="new-password"
+                   readonly onfocus="this.removeAttribute('readonly');">
+
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <a href="/login.html" class="link">Уже есть аккаунт? Войти</a>
+        <a href="/" class="link">← В каталог</a>
+    </div>
+
+    <script>
+        // Очистка полей при возврате кнопкой «Назад» (страница из кеша браузера)
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) { document.querySelector('form').reset(); }
+        });
+    </script>
+</body>
+</html>
