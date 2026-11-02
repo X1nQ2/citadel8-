@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Профиль · {{ brand }}{% endblock %}
+{% block body %}
+<div class="panel wide">
+  <h1>Профиль</h1>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <p class="muted" style="text-align:center;margin-top:-8px">Логин: <b>{{ cur_login }}</b> · {{ cur_role }}</p>
+
+  <h3 class="sub">Данные и адрес доставки</h3>
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="info">
+    <div class="field"><label for="fio">ФИО:</label>
+      <input type="text" id="fio" name="fio" required maxlength="100" value="{{ form.get('fio', '') }}"></div>
+    <div class="field"><label for="phone">Телефон:</label>
+      <input type="tel" id="phone" name="phone" required maxlength="30" value="{{ form.get('phone', '') }}"></div>
+    <div class="field"><label for="address">Адрес доставки по умолчанию:</label>
+      <input type="text" id="address" name="address" required maxlength="255" value="{{ form.get('address', '') }}"
+             placeholder="Город, улица, дом, квартира">
+      <div class="muted" style="margin-top:6px">Подставляется при оформлении заказа. Уже оформленные заказы не меняются.</div></div>
+    <button class="btn block">Сохранить</button>
+  </form>
+
+  <h3 class="sub">Смена пароля</h3>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="action" value="password">
+    <div class="field"><label for="old">Текущий пароль:</label>
+      <input type="password" id="old" name="old" required autocomplete="current-password"></div>
+    <div class="row2">
+      <div class="field"><label for="new">Новый пароль:</label>
+        <input type="password" id="new" name="new" required minlength="6" autocomplete="new-password"></div>
+      <div class="field"><label for="new2">Повторите:</label>
+        <input type="password" id="new2" name="new2" required minlength="6" autocomplete="new-password"></div>
+    </div>
+    <button class="btn block ghost">Изменить пароль</button>
+  </form>
+  <a class="link" href="{{ url_for('catalog') }}">← В каталог</a>
+</div>
+{% endblock %}

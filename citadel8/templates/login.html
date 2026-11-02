@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Вход · {{ brand }}{% endblock %}
+{% block body %}
+<div class="panel">
+  <h1>Вход</h1>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="field">
+      <label for="login">Логин:</label>
+      <input type="text" id="login" name="login" required minlength="3" maxlength="50"
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             readonly onfocus="this.removeAttribute('readonly');">
+    </div>
+    <div class="field">
+      <label for="password">Пароль:</label>
+      <input type="password" id="password" name="password" required
+             autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
+    </div>
+    <button class="btn block">Войти</button>
+  </form>
+  <a class="link" href="{{ url_for('register') }}">Нет аккаунта? Регистрация</a>
+  <a class="link" href="{{ url_for('catalog') }}">← В каталог</a>
+</div>
+<script>
+  window.addEventListener('pageshow', e => { if (e.persisted) document.querySelector('form').reset(); });
+</script>
+{% endblock %}

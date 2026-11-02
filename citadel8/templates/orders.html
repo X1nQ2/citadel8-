@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Все заказы' if is_admin else 'Мои заказы' }} · {{ brand }}{% endblock %}
+{% block body %}
+<main class="wrap orders-page">
+  <div class="orders-title-row">
+    <div><div class="eyebrow">{{ 'УПРАВЛЕНИЕ ПРОДАЖАМИ' if is_admin else 'ЛИЧНЫЙ КАБИНЕТ' }}</div>
+      <h2 class="title">{{ 'Заказы магазина' if is_admin else 'Мои заказы' }}</h2>
+      <p class="muted">Подробная информация, доставка и получение каждого заказа</p></div>
+    {% if not is_admin %}<a class="btn ghost" href="{{ url_for('catalog') }}">Продолжить покупки</a>{% endif %}
+  </div>
+
+  {% if is_admin and orders %}
+  <div class="admin-search order-search">
+    <span>⌕</span><input id="orderSearch" type="search" placeholder="Поиск: номер, код доставки, покупатель, телефон, адрес…">
+    <select id="orderStatus"><option value="">Все статусы</option>{% for st in statuses %}<option>{{ st }}</option>{% endfor %}</select>
+  </div>
+  {% endif %}
+
+  {% if orders %}
+  <div class="orders-list" id="ordersList">
+    {% for o in orders %}
+    <article class="order-card order-card-rich" id="o{{ o.id }}"
+      data-status="{{ o.status }}"
+      data-search="{{ (o.number|string ~ ' ' ~ (o.delivery_code or '') ~ ' ' ~ (o.fio or '') ~ ' ' ~ (o.phone or '') ~ ' ' ~ (o.address or ''))|lower }}">
+      <header class="oc-head">
+        <div class="oc-idblock">
+          <b class="oc-num">{{ o.number }}</b>
+          <span class="muted">· {{ o.created_at|fmtdatetime }}</span>
+        </div>
+        <span class="status {{ o.status|status_cls }}">{{ o.status }}</span>
+        <span class="oc-sum">{{ o.total|rub }}</span>
+      </header>
+
+      <div class="delivery-code-panel">
+        <div><span class="lbl">КОД ДОСТАВКИ / ПОЛУЧЕНИЯ</span><strong class="delivery-code">{{ o.delivery_code }}</strong></div>
+        <button class="copy-code" type="button" onclick="navigator.clipboard.writeText('{{ o.delivery_code }}').then(()=>{this.textContent='Скопировано'})">Копировать код</button>
+      </div>
+
+      <div class="oc-items-wrap">
+        <div class="section-caption">СОСТАВ ЗАКАЗА</div>
+        {% if o['items'] %}
+        <ul class="oc-items">
+          {% for it in o['items'] %}
+          <li><span class="item-name">{{ it.title }} <small>× {{ it.qty }}</small></span><span>{{ it.cost|rub }}</span></li>
+          {% endfor %}
+        </ul>
+        {% else %}<p class="muted">Состав заказа не сохранён в базе.</p>{% endif %}
+        <div class="order-total-line"><span>Итого к оплате</span><strong>{{ o.total|rub }}</strong></div>
+      </div>
+
+      <div class="order-info-grid">
+        <div class="order-info-cell"><span class="lbl">ПОЛУЧАТЕЛЬ</span><b>{{ o.fio or 'Не указан' }}</b><span>{{ o.phone or 'Телефон не указан' }}</span></div>
+        <div class="order-info-cell"><span class="lbl">АДРЕС ДОСТАВКИ</span><b>{{ o.address or 'Не указан' }}</b>
+          {% if o.status == STATUS_NEW and has_addr %}
+          <details class="addr-edit"><summary>Изменить адрес</summary>
+            <form class="addr-form" method="post" action="{{ url_for('order_address', id_order=o.id) }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <input type="text" name="address" value="{{ o.address }}" required maxlength="255" placeholder="Город, улица, дом, квартира">
+              <button class="btn small">Сохранить</button>
+            </form>
+          </details>{% endif %}
+        </div>
+        <div class="order-info-cell"><span class="lbl">СПОСОБ ДОСТАВКИ</span><b>{{ o.delivery_method }}</b><span>Срок уточняется при подтверждении</span></div>
+        <div class="order-info-cell"><span class="lbl">ОПЛАТА</span><b>{{ o.payment_method }}</b><span class="payment-state">{{ o.payment_status }}</span></div>
+      </div>
+
+      <div class="order-progress">
+        <div class="section-caption">СТАТУС ЗАКАЗА</div>
+        <div class="progress-steps">
+          <div class="progress-step active"><i>1</i><span>Оформлен</span></div>
+          <div class="progress-line {{ 'active' if o.status == STATUS_DONE }}"></div>
+          <div class="progress-step {{ 'active' if o.status == STATUS_DONE }}"><i>2</i><span>{{ 'Выполнен' if o.status == STATUS_DONE else 'В обработке' }}</span></div>
+          <div class="progress-line {{ 'active' if o.status == STATUS_DONE }}"></div>
+          <div class="progress-step {{ 'active' if o.status == STATUS_DONE }}"><i>3</i><span>Получен</span></div>
+        </div>
+        {% if o.status == STATUS_CANCELED %}<div class="cancel-note">Заказ отменён. Код доставки недействителен.</div>
+        {% else %}<p class="muted progress-hint">Сохрани код доставки. Он понадобится при получении заказа.</p>{% endif %}
+      </div>
+
+      {% if o.comment %}<div class="order-comment"><span class="lbl">КОММЕНТАРИЙ</span>{{ o.comment }}</div>{% endif %}
+
+      <footer class="oc-actions">
+        {% if is_admin and o.status != STATUS_CANCELED %}
+        <form class="inline" method="post" action="{{ url_for('admin_order_status', id_order=o.id) }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <label class="muted">Изменить статус:
+            <select name="status" onchange="if (this.value === 'Отменён' && !confirm('Отменить заказ {{ o.number }}? Товары вернутся на склад.')) { this.value = '{{ o.status }}'; return; } this.form.submit()">
+              {% for st in statuses %}<option {{ 'selected' if st == o.status }}>{{ st }}</option>{% endfor %}
+            </select>
+          </label>
+        </form>
+        {% elif not is_admin and o.status == STATUS_NEW %}
+        <form class="inline" method="post" action="{{ url_for('order_cancel', id_order=o.id) }}" onsubmit="return confirm('Отменить заказ {{ o.number }}?')">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn small danger">Отменить заказ</button>
+        </form>
+        {% endif %}
+      </footer>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty orders-empty"><h3>Заказов пока нет</h3><p>Когда ты оформишь покупку, здесь появятся её состав, код доставки и все детали.</p><a class="btn" href="{{ url_for('catalog') }}">Перейти в каталог</a></div>
+  {% endif %}
+</main>
+{% if is_admin %}
+<script>
+(() => { const q=document.getElementById('orderSearch'), st=document.getElementById('orderStatus'), cards=[...document.querySelectorAll('.order-card')];
+ const apply=()=>cards.forEach(c=>{const ok=(!q.value || c.dataset.search.includes(q.value.toLowerCase())) && (!st.value || c.dataset.status===st.value); c.hidden=!ok;});
+ if(q) q.addEventListener('input',apply); if(st) st.addEventListener('change',apply);
+})();
+</script>
+{% endif %}
+{% endblock %}

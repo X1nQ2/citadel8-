@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Регистрация · {{ brand }}{% endblock %}
+{% block body %}
+<div class="panel">
+  <h1>Регистрация</h1>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="field">
+      <label for="fio">ФИО:</label>
+      <input type="text" id="fio" name="fio" required maxlength="100" value="{{ form.get('fio', '') }}" placeholder="Иванов Иван Иванович">
+    </div>
+    <div class="field">
+      <label for="address">Адрес:</label>
+      <input type="text" id="address" name="address" required maxlength="255" value="{{ form.get('address', '') }}" placeholder="Город, улица, дом, квартира">
+    </div>
+    <div class="field">
+      <label for="phone">Телефон:</label>
+      <input type="tel" id="phone" name="phone" required maxlength="30" value="{{ form.get('phone', '') }}" placeholder="+7 (999) 000-00-00">
+    </div>
+    <div class="field">
+      <label for="login">Логин:</label>
+      <input type="text" id="login" name="login" required minlength="3" maxlength="50" value="{{ form.get('login', '') }}"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="password2">Повтор пароля:</label>
+        <input type="password" id="password2" name="password2" required minlength="6" autocomplete="new-password">
+      </div>
+    </div>
+    <label class="agree">
+      <input type="checkbox" name="agree" value="1" required {{ 'checked' if form.get('agree') }}>
+      <span>Я принимаю <a href="{{ url_for('terms') }}" target="_blank">пользовательское соглашение</a>
+      и <a href="{{ url_for('privacy') }}" target="_blank">политику конфиденциальности</a></span>
+    </label>
+    <button class="btn block">Зарегистрироваться</button>
+  </form>
+  <a class="link" href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a>
+  <a class="link" href="{{ url_for('catalog') }}">← В каталог</a>
+</div>
+{% endblock %}

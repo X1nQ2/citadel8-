@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Оформление заказа · {{ brand }}{% endblock %}
+{% block body %}
+<div class="panel">
+  <h1>Оформление и оплата</h1>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="bookbox">
+    <img src="{{ book.cover }}" alt="">
+    <div>
+      <strong>{{ book.title }}</strong><br>
+      {{ book.author }}<br>
+      <span class="price">{{ book.price|rub }}</span> · в наличии {{ book.stock }} экз.
+    </div>
+  </div>
+
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="field">
+      <label for="fio">Ваше полное имя (ФИО):</label>
+      <input type="text" id="fio" name="fio" required maxlength="100" value="{{ form.get('fio', '') }}" placeholder="Иванов Иван Иванович">
+    </div>
+    <div class="field">
+      <label for="phone">Номер мобильного телефона:</label>
+      <input type="tel" id="phone" name="phone" required maxlength="30" value="{{ form.get('phone', '') }}" placeholder="+7 (999) 000-00-00">
+    </div>
+    <div class="field">
+      <label for="address">Адрес доставки:</label>
+      <input type="text" id="address" name="address" required maxlength="255" value="{{ form.get('address', '') }}" placeholder="Город, улица, дом, квартира">
+      <div class="muted" style="margin-top:6px">Изменить адрес можно в «Мои заказы», пока заказ в работе.</div>
+    </div>
+    <div class="field">
+      <label for="qty">Количество:</label>
+      <input type="number" id="qty" name="qty" min="1" max="{{ [book.stock, 20]|min }}" value="{{ qty }}" required>
+    </div>
+    <div class="field"><label for="delivery_method">Способ доставки:</label>
+      <select id="delivery_method" name="delivery_method">
+        <option value="Курьерская доставка">Курьерская доставка</option>
+        <option value="Самовывоз">Самовывоз</option>
+      </select></div>
+    <div class="field"><label for="payment_method">Способ оплаты:</label>
+      <select id="payment_method" name="payment_method">
+        <option value="При получении">При получении</option>
+        <option value="Онлайн (после подключения оплаты)" disabled>Онлайн — скоро будет доступна</option>
+      </select></div>
+    <div class="field"><label for="comment">Комментарий к заказу (необязательно):</label>
+      <textarea id="comment" name="comment" rows="2" maxlength="255" placeholder="Например, удобное время доставки">{{ form.get('comment','') }}</textarea></div>
+    <div class="total">Итого: <b id="total">{{ (book.price * qty)|rub }}</b></div>
+    <button class="btn block">Подтвердить заказ и оплатить</button>
+  </form>
+  <a class="link" href="{{ url_for('catalog') }}">← Вернуться к списку книг</a>
+</div>
+<script>
+  const price = {{ book.price|tojson }}, qty = document.getElementById('qty');
+  const fmt = new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 2});
+  qty.addEventListener('input', () => {
+    const n = Math.max(1, parseInt(qty.value) || 1);
+    document.getElementById('total').textContent = fmt.format(price * n) + ' ₽';
+  });
+</script>
+{% endblock %}

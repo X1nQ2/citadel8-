@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Онлайн-магазин книг: каталог, корзина, доставка по вашему адресу.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E📚%3C/text%3E%3C/svg%3E">
+  <title>{% block title %}{{ brand }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% if is_admin %}
+  <div class="topbar admin-topbar">
+    <a class="brand" href="{{ url_for('admin_dashboard') }}">CITADEL / ADMIN</a>
+    <nav><a href="{{ url_for('admin_dashboard') }}">Товары</a><a href="{{ url_for('orders') }}">Заказы</a><a href="{{ url_for('catalog') }}">Открыть магазин</a>
+      <form class="inline" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="linklike">Выйти</button></form>
+    </nav>
+  </div>
+  {% else %}
+  <div class="topbar"><a class="brand" href="{{ url_for('catalog') }}">{{ brand }}</a><nav>
+    {% if cur_login %}<a href="{{ url_for('cart') }}">Корзина<span class="cartbadge" id="cartCount"{% if not cart_count %} hidden{% endif %}>{{ cart_count }}</span></a><a href="{{ url_for('orders') }}">Мои заказы</a><a class="who" href="{{ url_for('profile') }}">{{ cur_login }}</a>
+    <form class="inline" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="linklike">Выйти</button></form>
+    {% else %}<a href="{{ url_for('register') }}">Регистрация</a><a href="{{ url_for('login') }}">Войти</a>{% endif %}
+  </nav></div>
+  {% endif %}
+
+  {% for m in get_flashed_messages() %}<div class="flash">{{ m }}</div>{% endfor %}
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <div class="page">{% block body %}{% endblock %}</div>
+
+  {% if not is_admin %}<footer class="site-footer">
+    <div class="foot-inner">
+      <div class="foot-col wide">
+        <div class="foot-brand">{{ brand }}</div>
+        <p class="muted">Онлайн-магазин книг. Заказ можно отменить или изменить адрес доставки, пока он в работе.</p>
+        <p class="foot-contact">
+          <a href="mailto:{{ shop.email }}">{{ shop.email }}</a><br>
+          {{ shop.phone }} · {{ shop.hours }}
+        </p>
+      </div>
+      <nav class="foot-col">
+        <div class="foot-h">Магазин</div>
+        <a href="{{ url_for('catalog') }}">Каталог</a>
+        {% if cur_login %}
+        <a href="{{ url_for('cart') }}">Корзина</a>
+        <a href="{{ url_for('orders') }}">{{ 'Все заказы' if is_admin else 'Мои заказы' }}</a>
+        <a href="{{ url_for('profile') }}">Профиль и адрес</a>
+        {% else %}
+        <a href="{{ url_for('login') }}">Войти</a>
+        <a href="{{ url_for('register') }}">Регистрация</a>
+        {% endif %}
+      </nav>
+      <nav class="foot-col">
+        <div class="foot-h">Покупателям</div>
+        <a href="{{ url_for('delivery') }}">Доставка и оплата</a>
+        <a href="{{ url_for('contacts') }}">Контакты и поддержка</a>
+        <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>
+        <a href="{{ url_for('privacy') }}">Политика конфиденциальности</a>
+      </nav>
+    </div>
+    <div class="foot-copy">© 2026 {{ brand }}{% if shop.requisites %} · {{ shop.requisites }}{% endif %}</div>
+  </footer>{% endif %}
+</body>
+</html>

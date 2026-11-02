@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Управление товарами · CITADEL ADMIN{% endblock %}
+{% block body %}
+<main class="admin-shell">
+  <div class="admin-heading">
+    <div><div class="admin-eyebrow">BACK OFFICE / CATALOG</div><h1>Управление товарами</h1><p>Редактирование каталога · {{ books|length }} позиций в выборке</p></div>
+    <a class="admin-primary" href="{{ url_for('admin_add') }}">＋ Добавить товар</a>
+  </div>
+  <form class="admin-search" method="get" action="{{ url_for('admin_dashboard') }}">
+    <span>⌕</span><input type="search" name="q" value="{{ term }}" placeholder="Поиск по названию, автору, ISBN, жанру или ID…" autofocus>
+    {% if term %}<a href="{{ url_for('admin_dashboard') }}">Сбросить</a>{% endif %}<button>Найти</button>
+  </form>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>ID / Издание</th><th>Автор</th><th>ISBN / Год</th><th>Жанр</th><th>Издательство</th><th>Цена</th><th>Остаток</th><th>Действия</th></tr></thead>
+      <tbody>
+      {% for b in books %}
+        {% set selected_genre = (b.genre.split(',')[0]|trim) %}
+        <tr class="admin-product-row">
+          <td colspan="8">
+            <form class="admin-edit-grid" method="post" enctype="multipart/form-data" action="{{ url_for('admin_update_book', id_tov=b.id) }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="return_q" value="{{ term }}">
+              <div class="admin-id">#{{ b.id }}<img src="{{ b.cover }}" alt=""></div>
+              <label class="admin-field"><span>Название</span><input name="title" value="{{ b.title }}" maxlength="255" required></label>
+              <label class="admin-field"><span>Автор</span><input name="author" value="{{ b.author }}" maxlength="100" required></label>
+              <label class="admin-field"><span>ISBN</span><input name="isbn" value="{{ '' if b.isbn == '—' else b.isbn }}" maxlength="25"><span>Год</span><input type="number" name="year" value="{{ b.year if b.year != '—' else '' }}" min="1000" max="{{ 2027 }}" required></label>
+              <label class="admin-field"><span>Жанр</span><select name="genre_id" required>{% for id, name in genres %}<option value="{{ id }}" {{ 'selected' if name == selected_genre }}>{{ name }}</option>{% endfor %}</select></label>
+              <label class="admin-field"><span>Издательство</span><select name="publisher_id" required>{% for id, name in pubs %}<option value="{{ id }}" {{ 'selected' if name == b.publisher }}>{{ name }}</option>{% endfor %}</select></label>
+              <label class="admin-field compact"><span>Цена, ₽</span><input type="number" name="price" value="{{ '%g'|format(b.price) }}" min="0.01" step="0.01" required></label>
+              <label class="admin-field compact"><span>Остаток</span><input type="number" name="stock" value="{{ b.stock }}" min="0" required></label>
+              <label class="admin-field"><span>Новая обложка</span><input type="file" name="cover" accept="image/jpeg,image/png,image/webp"></label>
+              <div class="admin-actions"><button class="admin-save">Сохранить</button></div>
+            </form>
+            <div class="admin-row-bottom"><span class="admin-stock {{ 'is-empty' if b.stock == 0 }}">{{ 'Нет в наличии' if b.stock == 0 else 'На складе: ' ~ b.stock }}</span>
+              <form method="post" action="{{ url_for('admin_delete', id_tov=b.id) }}" onsubmit="return confirm('Скрыть «{{ b.title|replace("'", "")|replace('"', '') }}» из каталога?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="admin-delete">Скрыть из каталога</button></form>
+            </div>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="8" class="admin-empty">Ничего не найдено. Измените поисковый запрос.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

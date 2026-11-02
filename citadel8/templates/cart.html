@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Корзина · {{ brand }}{% endblock %}
+{% block body %}
+<main class="wrap">
+  <h2 class="title">Корзина</h2>
+  {% if error %}<div class="error" style="margin-top:18px">{{ error }}</div>{% endif %}
+
+  {% if items %}
+  <div class="scroll-x">
+  <table class="orders">
+    <thead><tr><th>Том</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+    <tbody>
+      {% for b in items %}
+      <tr>
+        <td>
+          <div class="bookbox" style="margin:0;background:none;padding:0">
+            <img src="{{ b.cover }}" alt="">
+            <div><strong>{{ b.title }}</strong><br><span class="muted">{{ b.author }}</span></div>
+          </div>
+        </td>
+        <td>{{ b.price|rub }}</td>
+        <td>
+          <form class="inline qtyform" method="post" action="{{ url_for('cart_update', id_tov=b.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="number" name="qty" min="0" max="{{ [b.stock, 20]|min }}" value="{{ b.qty }}"
+                   class="qty" onchange="this.form.submit()">
+          </form>
+        </td>
+        <td><b>{{ b.sum|rub }}</b></td>
+        <td>
+          <form class="inline" method="post" action="{{ url_for('cart_remove', id_tov=b.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn small danger">Убрать</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div class="panel wide checkout">
+    <h1>Оформление</h1>
+    <form method="post" action="{{ url_for('cart_checkout') }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="fio">ФИО:</label>
+        <input type="text" id="fio" name="fio" required maxlength="100" value="{{ form.get('fio', '') }}"></div>
+      <div class="field"><label for="phone">Телефон:</label>
+        <input type="tel" id="phone" name="phone" required maxlength="30" value="{{ form.get('phone', '') }}"></div>
+      <div class="field"><label for="address">Адрес доставки:</label>
+        <input type="text" id="address" name="address" required maxlength="255" value="{{ form.get('address', '') }}" placeholder="Город, улица, дом, квартира">
+        <div class="muted" style="margin-top:6px">Адрес сохранится в заказе. Изменить его можно в «Мои заказы», пока заказ в работе. По умолчанию адрес берётся из <a href="{{ url_for('profile') }}">профиля</a>.</div></div>
+      <div class="field"><label for="delivery_method">Способ доставки:</label>
+        <select id="delivery_method" name="delivery_method">
+          <option value="Курьерская доставка" {{ 'selected' if form.get('delivery_method', 'Курьерская доставка') == 'Курьерская доставка' }}>Курьерская доставка</option>
+          <option value="Самовывоз" {{ 'selected' if form.get('delivery_method') == 'Самовывоз' }}>Самовывоз</option>
+        </select></div>
+      <div class="field"><label for="payment_method">Способ оплаты:</label>
+        <select id="payment_method" name="payment_method">
+          <option value="При получении">При получении</option>
+          <option value="Онлайн (после подключения оплаты)" disabled>Онлайн — скоро будет доступна</option>
+        </select></div>
+      <div class="field"><label for="comment">Комментарий к заказу (необязательно):</label>
+        <textarea id="comment" name="comment" rows="2" maxlength="255" placeholder="Например, удобное время доставки">{{ form.get('comment','') }}</textarea></div>
+      <div class="total">Итого: <b>{{ total|rub }}</b></div>
+      <button class="btn block">Оформить заказ и оплатить</button>
+    </form>
+    <a class="link" href="{{ url_for('catalog') }}">← Продолжить покупки</a>
+  </div>
+  {% else %}
+  <p class="empty">Корзина пуста. <a href="{{ url_for('catalog') }}">Перейти в каталог</a></p>
+  {% endif %}
+
+  <h2 class="title" style="margin-top:50px">Прошлые покупки</h2>
+  {% if history %}<a class="muted" style="margin-left:14px" href="{{ url_for('orders') }}">Все заказы и отмена →</a>{% endif %}
+  {% if history %}
+  <div class="history">
+    {% for o in history %}
+    <div class="hist-order">
+      <div class="hist-head">
+        <b>{{ o.number }}</b> · {{ o.date|fmtdate }}
+        <span class="status {{ o.status|status_cls }}">{{ o.status }}</span>
+        <span class="hist-sum">{{ o.total|rub }}</span>
+      </div>
+      {% if o.address %}<div class="muted" style="margin-top:6px">Адрес доставки: {{ o.address }}</div>{% endif %}
+      {% if o['items'] %}
+      <ul>
+        {% for it in o['items'] %}
+        <li>
+          <span>{{ it.title }} × {{ it.qty }} — {{ it.cost|rub }}</span>
+          {% if it.id %}
+          <form class="inline js-cart" method="post" action="{{ url_for('cart_add', id_tov=it.id) }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="next" value="{{ url_for('cart') }}">
+            <button class="btn small ghost">Купить снова</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted" style="margin:6px 0 0">Состав заказа не сохранён.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty">Вы ещё ничего не покупали.</p>
+  {% endif %}
+</main>
+<script>
+  const toast = document.getElementById('toast');
+  document.addEventListener('submit', async e => {
+    const f = e.target.closest('form.js-cart'); if (!f) return;
+    e.preventDefault();
+    try {
+      const r = await fetch(f.action, {method: 'POST', body: new FormData(f), headers: {'X-Requested-With': 'fetch'}});
+      const d = await r.json();
+      if (d.ok) { location.reload(); return; }
+      toast.textContent = d.message; toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    } catch (err) { f.submit(); }
+  });
+</script>
+{% endblock %}

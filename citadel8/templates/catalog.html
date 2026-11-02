@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Каталог · {{ brand }}{% endblock %}
+{% macro stars(avg, n) -%}
+{%- if n %}<span class="stars-txt">{{ '★' * (avg|round|int) }}{{ '☆' * (5 - (avg|round|int)) }}</span> <span class="muted">{{ '%.1f'|format(avg) }} ({{ n }})</span>{% else %}<span class="muted">Нет оценок</span>{% endif -%}
+{%- endmacro %}
+{% macro buy_buttons(b) -%}
+{%- if b.stock <= 0 %}<span class="out">Нет в наличии</span>
+{%- elif cur_login %}<span class="buy-actions js-stop">
+  <form class="inline js-cart" method="post" action="{{ url_for('cart_add', id_tov=b.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn ghost">В корзину</button></form>
+  <a class="btn" href="{{ url_for('order', id_tov=b.id) }}">Купить</a></span>
+{%- else %}<a class="btn ghost js-stop" href="{{ url_for('login') }}">Войдите, чтобы купить</a>{% endif -%}
+{%- endmacro %}
+{% block body %}
+
+<div class="overlay pay" id="pay">
+  <div class="box">
+    <h3>Заказ оформлен!</h3>
+    <p>Заказ оформлен. Статус и адрес доставки — в разделе «Мои заказы».</p>
+  </div>
+</div>
+
+<div class="overlay" id="bookModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="close" type="button" id="mClose" aria-label="Закрыть">&times;</button>
+    <div class="layout">
+      <div class="cover">{% if cur_login %}<a id="mImgLink" href="#" title="Купить"><img id="mImg" alt=""></a>{% else %}<img id="mImg" alt="">{% endif %}</div>
+      <div>
+        <h3 id="mTitle"></h3>
+        <div class="author" id="mAuthor"></div>
+        <p class="meta"><b>Жанр:</b> <span id="mGenre"></span></p>
+        <p class="meta"><b>Издательство:</b> <span id="mPub"></span></p>
+        <p class="meta"><b>Год издания:</b> <span id="mYear"></span></p>
+        <p class="meta"><b>ISBN:</b> <span id="mIsbn"></span></p>
+        <p class="meta"><b>Доступно на складе:</b> <span id="mStock"></span> экз.</p>
+        <p class="meta"><b>Цена:</b> <span id="mPrice"></span></p>
+        <p class="meta"><b>Рейтинг:</b> <span class="rating-line" id="mRating"></span></p>
+        {% if has_rating %}
+        {% if cur_login %}
+        <div class="rate-box"><span class="muted">Ваша оценка:</span>
+          <span class="rate" id="mRate">{% for i in range(1, 6) %}<button type="button" data-v="{{ i }}" title="{{ i }} из 5" aria-label="Оценить на {{ i }}">★</button>{% endfor %}</span>
+          <span class="muted" id="mRateMsg"></span></div>
+        {% else %}<p class="meta muted"><a href="{{ url_for('login') }}">Войдите</a>, чтобы оценить книгу.</p>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="note" id="mNote"></div>
+    <div class="actions">
+      {% if cur_login %}
+      <form class="inline js-cart" id="mCart" method="post" action="#">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost" id="mCartBtn" style="font-size:1rem;padding:12px 25px">В корзину</button>
+      </form>
+      <a class="btn" id="mBuy" href="#" style="font-size:1rem;padding:12px 35px">Оформить и купить</a>
+      {% else %}
+      <a class="btn ghost" href="{{ url_for('login') }}">Войдите, чтобы купить</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<header class="hero">
+  <h1>Онлайн-магазин книг «{{ brand }}»</h1>
+  <p class="tagline">Книги, деинсталлированные из цифрового ада. 0% синего света. 100% стабильность ума.</p>
+</header>
+
+<main class="wrap">
+  {% if day %}
+  <section class="daybook" data-open="{{ day.id }}" title="Открыть описание">
+    <img src="{{ day.cover }}" alt="{{ day.title }}">
+    <div class="db-body">
+      <div class="db-label">📖 Книга дня</div>
+      <h3>{{ day.title }}</h3>
+      <div class="author">{{ day.author }} · {{ day.genre }}</div>
+      <div class="rating-line">{{ stars(day.rating, day.votes) }}</div>
+      <div class="db-foot"><span class="price">{{ day.price|rub }}</span> {{ buy_buttons(day) }}</div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if recs %}
+  <h2 class="title" style="margin-top:34px">{{ 'Рекомендуем вам' if personal else 'Популярные книги' }}</h2>
+  {% if personal %}<p class="muted" style="margin:6px 0 0">Подборка по жанрам и авторам книг, которые вы покупали и высоко оценили.</p>{% endif %}
+  <div class="recs">
+    {% for r in recs %}
+    <article class="rec" data-open="{{ r.id }}">
+      <img src="{{ r.cover }}" alt="{{ r.title }}" loading="lazy">
+      <div class="rec-body">
+        <div class="rec-title">{{ r.title }}</div>
+        <div class="muted">{{ r.author }}</div>
+        <div class="rating-line">{{ stars(r.rating, r.votes) }}</div>
+        <div class="rec-foot"><span class="price">{{ r.price|rub }}</span>{{ buy_buttons(r) }}</div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h2 class="title" style="margin-top:34px">Каталог доступных томов</h2>
+
+  <div class="tools">
+    <input type="search" id="q" placeholder="Поиск по названию или автору…" autocomplete="off">
+    <select id="g">
+      <option value="">Все жанры</option>
+      {% for g in genres %}<option>{{ g }}</option>{% endfor %}
+    </select>
+    <select id="s" aria-label="Сортировка">
+      <option value="rand">Вперемешку</option>
+      <option value="price_asc">Сначала дешёвые</option>
+      <option value="price_desc">Сначала дорогие</option>
+      <option value="rating">По рейтингу</option>
+      <option value="title">По названию</option>
+    </select>
+    <span class="counter" id="count"></span>
+  </div>
+
+  <section class="grid" id="grid">
+    {% for b in books %}
+    <article class="card" tabindex="0" role="button" aria-label="Подробнее: {{ b.title }}" data-id="{{ b.id }}" data-price="{{ b.price }}" data-rating="{{ b.rating }}"
+             data-votes="{{ b.votes }}" data-title="{{ b.title|lower }}"
+             data-search="{{ (b.title ~ ' ' ~ b.author)|lower }}" data-genre="{{ b.genre }}">
+      <div class="img"><img src="{{ b.cover }}" alt="{{ b.title }}" loading="lazy"><span class="tag">Подробнее · {{ b.price|rub }}</span></div>
+      <div>
+        <h3>{{ b.title }}</h3>
+        <div class="author">Автор: {{ b.author }}</div>
+        <div class="rating-line">{{ stars(b.rating, b.votes) }}</div>
+        <p class="meta"><b>Жанр:</b> {{ b.genre }}</p>
+        <p class="meta"><b>Доступно:</b> {{ b.stock }} экз.{% if 0 < b.stock <= 3 %} <span class="low">Осталось мало</span>{% endif %}</p>
+      </div>
+      <div class="foot">
+        <span class="price">{{ b.price|rub }}</span>
+        {% if b.stock <= 0 %}
+          <span class="out">Нет в наличии</span>
+        {% elif cur_login %}
+          <span class="buy-actions js-stop">
+            <form class="inline js-cart" method="post" action="{{ url_for('cart_add', id_tov=b.id) }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <button class="btn ghost" title="Добавить в корзину">В корзину</button>
+            </form>
+            <a class="btn" href="{{ url_for('order', id_tov=b.id) }}">Купить</a>
+          </span>
+        {% endif %}
+      </div>
+
+
+    </article>
+    {% endfor %}
+  </section>
+  <p class="empty" id="empty" hidden>Ничего не найдено.</p>
+  {% if not books %}<p class="empty">В архивных фондах пока нет томов.</p>{% endif %}
+</main>
+
+<script id="booksData" type="application/json">{{ books|tojson }}</script>
+<script>
+(function () {
+  const books = JSON.parse(document.getElementById('booksData').textContent);
+  const byId = Object.fromEntries(books.map(b => [b.id, b]));
+  const $ = id => document.getElementById(id);
+  const CSRF = {{ csrf|tojson }};
+  const LOGGED = {{ 'true' if cur_login else 'false' }};
+  const rub = v => new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 2}).format(v) + ' ₽';
+
+  // --- модальное окно (только textContent: без XSS) ---
+  const modal = $('bookModal');
+  let curId = null;
+  const starStr = v => { const n = Math.round(v); return '★'.repeat(n) + '☆'.repeat(5 - n); };
+  const ratingHtml = b => b.votes
+    ? '<span class="stars-txt">' + starStr(b.rating) + '</span> <span class="muted">' + b.rating.toFixed(1) + ' (' + b.votes + ')</span>'
+    : '<span class="muted">Нет оценок</span>';
+  function renderRating(b) {
+    $('mRating').innerHTML = ratingHtml(b);
+    const box = $('mRate');
+    if (box) box.querySelectorAll('button').forEach(btn => btn.classList.toggle('on', +btn.dataset.v <= b.mine));
+  }
+  function refreshCard(b) {
+    const c = document.querySelector('.card[data-id="' + b.id + '"]');
+    if (c) { c.dataset.rating = b.rating; c.dataset.votes = b.votes; c.querySelector('.rating-line').innerHTML = ratingHtml(b); }
+  }
+  if ($('mRate')) $('mRate').addEventListener('click', async e => {
+    const btn = e.target.closest('button'); if (!btn || curId === null) return;
+    const fd = new FormData(); fd.append('csrf', CSRF); fd.append('score', btn.dataset.v);
+    try {
+      const r = await fetch('/rate/' + curId, {method: 'POST', body: fd, headers: {'X-Requested-With': 'fetch'}});
+      const d = await r.json(); const b = byId[curId];
+      if (d.ok) { b.rating = d.avg; b.votes = d.votes; b.mine = d.mine; renderRating(b); refreshCard(b); }
+      $('mRateMsg').textContent = d.message;
+    } catch (err) { location.href = '/login'; }
+  });
+  // «Книга дня» и рекомендации открывают карточку книги
+  document.addEventListener('click', e => {
+    if (e.target.closest('.js-stop')) return;
+    const el = e.target.closest('[data-open]'); if (el) openBook(+el.dataset.open);
+  });
+  function openBook(id) {
+    const b = byId[id]; if (!b) return;
+    $('mTitle').textContent = b.title;
+    $('mAuthor').textContent = 'Автор: ' + b.author;
+    $('mGenre').textContent = b.genre;
+    $('mPub').textContent = b.publisher;
+    $('mYear').textContent = b.year;
+    $('mIsbn').textContent = b.isbn;
+    $('mStock').textContent = b.stock;
+    $('mPrice').textContent = rub(b.price);
+    curId = id; renderRating(b); if ($('mRateMsg')) $('mRateMsg').textContent = '';
+    $('mImg').src = b.cover; $('mImg').alt = b.title;
+    $('mNote').textContent = `«${b.title}», ${b.author}. Издательство «${b.publisher}», ${b.year} год. ISBN ${b.isbn}.`;
+    if (LOGGED) {
+      const buy = $('mBuy'), il = $('mImgLink'), cf = $('mCart');
+      if (b.stock > 0) {
+        il.href = '/order/' + b.id;
+        buy.href = '/order/' + b.id; buy.classList.remove('disabled'); buy.textContent = 'Оформить и купить';
+        cf.action = '/cart/add/' + b.id; cf.hidden = false;
+      } else {
+        il.removeAttribute('href');
+        buy.removeAttribute('href'); buy.classList.add('disabled'); buy.textContent = 'Нет в наличии';
+        cf.hidden = true;
+      }
+    }
+    modal.classList.add('show');
+  }
+  const closeBook = () => modal.classList.remove('show');
+  $('grid').addEventListener('click', e => {
+    if (e.target.closest('.js-stop')) return;
+    const card = e.target.closest('.card'); if (card) openBook(+card.dataset.id);
+  });
+  $('grid').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openBook(+e.target.dataset.id); } });
+  modal.addEventListener('click', e => { if (e.target === modal) closeBook(); });
+  $('mClose').addEventListener('click', closeBook);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBook(); });
+
+  // --- «В корзину» без перезагрузки страницы ---
+  const toast = $('toast'); let toastT;
+  function showToast(msg) {
+    toast.textContent = msg; toast.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+  document.addEventListener('submit', async e => {
+    const f = e.target.closest('form.js-cart'); if (!f) return;
+    e.preventDefault();
+    try {
+      const r = await fetch(f.action, {method: 'POST', body: new FormData(f),
+                                       headers: {'X-Requested-With': 'fetch'}});
+      const d = await r.json();
+      showToast(d.message);
+      const badge = $('cartCount');
+      if (badge) { badge.textContent = d.count; badge.hidden = !d.count; }
+    } catch (err) { f.submit(); }
+  });
+
+  // --- сортировка (по умолчанию порядок случайный: сервер перемешивает при каждой загрузке) ---
+  const grid = $('grid'), original = [...grid.querySelectorAll('.card')];
+  const sorters = {
+    price_asc: (a, b) => +a.dataset.price - +b.dataset.price,
+    price_desc: (a, b) => +b.dataset.price - +a.dataset.price,
+    rating: (a, b) => (+b.dataset.rating - +a.dataset.rating) || (+b.dataset.votes - +a.dataset.votes),
+    title: (a, b) => a.dataset.title.localeCompare(b.dataset.title, 'ru'),
+  };
+  $('s').addEventListener('change', () => {
+    const k = $('s').value;
+    (sorters[k] ? [...original].sort(sorters[k]) : original).forEach(c => grid.appendChild(c));
+  });
+
+  // --- поиск и фильтр по жанру ---
+  const cards = [...document.querySelectorAll('.card')];
+  function applyFilter() {
+    const q = $('q').value.trim().toLowerCase(), g = $('g').value;
+    let n = 0;
+    cards.forEach(c => {
+      const ok = (!q || c.dataset.search.includes(q)) && (!g || c.dataset.genre.split(',').map(s => s.trim()).includes(g));
+      c.hidden = !ok; if (ok) n++;
+    });
+    $('count').textContent = cards.length ? `Показано: ${n} из ${cards.length}` : '';
+    $('empty').hidden = !(cards.length && n === 0);
+  }
+  $('q').addEventListener('input', applyFilter);
+  $('g').addEventListener('change', applyFilter);
+  applyFilter();
+
+  // --- уведомление об оплате ---
+  if (new URLSearchParams(location.search).get('payment') === 'success') {
+    const p = $('pay'); p.classList.add('show');
+    const hide = () => { p.classList.remove('show'); history.replaceState({}, '', '/'); };
+    setTimeout(hide, 3000); p.addEventListener('click', hide);
+  }
+})();
+</script>
+{% endblock %}

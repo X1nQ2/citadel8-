@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Контакты и поддержка · {{ brand }}{% endblock %}
+{% block body %}
+<main class="wrap doc">
+  <h2 class="title">Контакты и поддержка</h2>
+
+  <div class="contact-grid">
+    <div class="contact-card"><div class="lbl">Электронная почта</div>
+      <a href="mailto:{{ shop.email }}">{{ shop.email }}</a></div>
+    <div class="contact-card"><div class="lbl">Телефон</div>{{ shop.phone }}</div>
+    <div class="contact-card"><div class="lbl">Время работы поддержки</div>{{ shop.hours }}</div>
+    {% if shop.address %}<div class="contact-card"><div class="lbl">Адрес</div>{{ shop.address }}</div>{% endif %}
+  </div>
+  {% if shop.requisites %}<p class="muted" style="margin-top:18px">{{ shop.requisites }}</p>{% endif %}
+
+  <h3>Частые вопросы</h3>
+  <details class="faq"><summary>Как отменить заказ?</summary>
+    <p>Откройте «<a href="{{ url_for('orders') }}">Мои заказы</a>» и нажмите «Отменить заказ». Это возможно, пока заказ
+    в статусе «В работе». Тома вернутся на склад.</p></details>
+  <details class="faq"><summary>Как изменить адрес доставки?</summary>
+    <p>В «Мои заказы» у заказа «В работе» нажмите «Изменить адрес». Адрес по умолчанию для новых заказов меняется
+    в <a href="{{ url_for('profile') }}">профиле</a>.</p></details>
+  <details class="faq"><summary>Как оценить книгу?</summary>
+    <p>Войдите в аккаунт, откройте книгу в каталоге и выберите от 1 до 5 звёзд. Оценку можно изменить.</p></details>
+  <details class="faq"><summary>Я забыл пароль</summary>
+    <p>Напишите в поддержку на <a href="mailto:{{ shop.email }}">{{ shop.email }}</a> с указанием логина.</p></details>
+  <details class="faq"><summary>Заказ уже выполнен, но нужно вернуть книгу</summary>
+    <p>Свяжитесь с поддержкой, указав номер заказа. Возврат осуществляется в порядке, установленном
+    законодательством о защите прав потребителей.</p></details>
+
+  <p style="margin-top:24px"><a href="{{ url_for('delivery') }}">Доставка и оплата</a> ·
+  <a href="{{ url_for('terms') }}">Пользовательское соглашение</a> ·
+  <a href="{{ url_for('privacy') }}">Политика конфиденциальности</a></p>
+</main>
+{% endblock %}
