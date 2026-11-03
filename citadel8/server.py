@@ -1100,13 +1100,51 @@ def _refs(cur):
 @admin_required
 def admin_dashboard():
     term = (request.args.get("q") or "").strip().lower()
+    genre_filter = (request.args.get("genre") or "").strip()
+    stock_filter = (request.args.get("stock") or "all").strip()
+    sort = (request.args.get("sort") or "newest").strip()
     with db() as conn:
         cur = conn.cursor()
         books = fetch_books(cur)
         genres, pubs = _refs(cur)
+
+    total_books = len(books)
+    total_available = sum(1 for b in books if b["stock"] > 0)
+    total_empty = sum(1 for b in books if b["stock"] == 0)
     if term:
-        books = [b for b in books if term in " ".join([str(b["id"]), b["title"], b["author"], b["isbn"], b["genre"], b["publisher"]]).lower()]
-    return render_template("admin.html", books=books, genres=genres, pubs=pubs, term=term)
+        books = [b for b in books if term in " ".join(
+            [str(b["id"]), b["title"], b["author"], b["isbn"], b["genre"], b["publisher"]]
+        ).lower()]
+    if genre_filter:
+        books = [b for b in books if genre_filter in [x.strip() for x in b["genre"].split(",")]]
+    if stock_filter == "available":
+        books = [b for b in books if b["stock"] > 0]
+    elif stock_filter == "empty":
+        books = [b for b in books if b["stock"] == 0]
+    elif stock_filter == "low":
+        books = [b for b in books if 0 < b["stock"] <= 5]
+
+    sorters = {
+        "newest": lambda b: b["id"],
+        "title": lambda b: str(b["title"]).lower(),
+        "price_asc": lambda b: b["price"],
+        "price_desc": lambda b: b["price"],
+        "stock_asc": lambda b: b["stock"],
+        "stock_desc": lambda b: b["stock"],
+    }
+    if sort in sorters:
+        books.sort(key=sorters[sort], reverse=sort in ("newest", "price_desc", "stock_desc"))
+    else:
+        sort = "newest"
+    stats = {
+        "total": total_books,
+        "shown": len(books),
+        "available": total_available,
+        "empty": total_empty,
+    }
+    return render_template("admin.html", books=books, genres=genres, pubs=pubs,
+                           term=term, genre_filter=genre_filter, stock_filter=stock_filter,
+                           sort=sort, stats=stats)
 
 
 @app.post("/admin/update/<int:id_tov>")
